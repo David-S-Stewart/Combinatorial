@@ -6,10 +6,11 @@
 :License:       MIT
 
 Combinatorial generator for generation where the number of dimensions is
-greater than the coverage.
+one greater than the coverage and there are no constraints.
 """
 
 from collections.abc import Collection, Generator
+from itertools import product
 from typing import Optional
 from utility import check
 from .constraint import Constraint
@@ -19,15 +20,18 @@ from .generator import Generator_
 from .option import Option
 
 
-class SequenceGenerator(Generator_):
+class MinusOneGenerator(Generator_):
 
-    """General purpose generator that can resolve all generations except those
-    covered by the Generator_.
+    """High performance generator that guarantees a minimum number of
+    combinations in polynomial time and with very small memory usage. The
+    conditions under which this succeeds are:
+    - The generator is unconstrained
+    - Coverage is 1 less than the number of active dimensions
 
     :var OPTION: Default option for this generator.
     """
 
-    OPTION: Option = Option.FEATURE_RANDOM | Option.RETIRE_RANDOM
+    OPTION: Option = Option.NONE
 
     @classmethod
     def is_supported(cls, dimensions: Collection[Dimension],
@@ -39,7 +43,10 @@ class SequenceGenerator(Generator_):
         :param constraints: Constraints in the configuration.
         :param coverage: Required coverage.
         """
-        return not Generator_.is_supported(dimensions, constraints, coverage)
+        if constraints:
+            return False
+        else:
+            return len([d for d in dimensions if len(d) > 1]) == coverage + 1
 
     def iterate(self, option: Option = OPTION, iterator_seed: int = 0) \
             -> Generator[Collection[Optional[Feature]], None, None]:
@@ -54,8 +61,20 @@ class SequenceGenerator(Generator_):
         # ----------
         dimensions = list(self._dimensions)
         dimensions.sort(key=lambda d: len(d), reverse=True)
-        self.initialise((), option)
+        fixed = self.initialise(dimensions[:self._coverage], option)
+        final = dimensions[self._coverage]
+        cadence = len(dimensions[self._coverage - 1])
         # Iterate through the combinations.
-        sub_combinations = self.get_sub_combinations()
-        yield from self._fill_to_completion(dimensions, sub_combinations,
-                                            option, iterator_seed)
+        for combination in product(*[d.features for d in fixed]):
+            count = 0
+            for feature, dimension in zip(combination, fixed):
+                dimension.feature = feature
+                feature.count += 1
+                count += feature.index
+            count = count % cadence
+            if count < len(final):
+                final.feature_index = count
+                final.feature.count += 1
+            else:
+                final.feature = None
+            yield [d.feature for d in self._dimensions]

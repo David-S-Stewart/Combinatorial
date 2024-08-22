@@ -1,9 +1,11 @@
 """
 :Author:        David Stewart
-:Contact:       https://www.linkedin.com/in/david-stewart-ab643452/
+:Contact:       https://www.linkedin.com/in/david-s-stewart/
 :Date:          2024-03-01
 :Compatibility: Python 3.9
 :License:       MIT
+
+Extended Feature information for tracking.
 """
 
 from typing import Any
@@ -12,7 +14,7 @@ from utility import check
 
 class Feature:
 
-    """Feature tracking option for a combinatorial Dimension."""
+    """Feature tracking definition for a combinatorial Dimension."""
 
     def __init__(self, index: int, value: Any):
         """Construct a Feature object.
@@ -48,8 +50,8 @@ class Feature:
         self._count = value
 
     def __str__(self) -> str:
-        # Example: 'Feature'
-        return self.__class__.__name__
+        # Example: 'value (0)'
+        return f'{self._value} ({self._index})'
 
     def __eq__(self, other: Any) -> bool:
         # Check equality against another Feature.

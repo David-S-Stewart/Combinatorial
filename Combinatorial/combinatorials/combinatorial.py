@@ -1,83 +1,76 @@
 """
 :Author:        David Stewart
-:Contact:       https://www.linkedin.com/in/david-stewart-ab643452/
+:Contact:       https://www.linkedin.com/in/david-s-stewart/
 :Date:          2024-03-01
 :Compatibility: Python 3.9
 :License:       MIT
+
+Provide a user-level combinatorial API.
 """
 
-from collections.abc import Generator
-from typing import Optional
-from .feature import Feature
+from collections.abc import Collection, Generator
+from typing import Any, Optional
+from utility import check
+from utility.defaults import NONE_TYPE
+from .configuration import Configuration
+from .constraint import Constraint
+from .dimension import Dimension
 from .generator import Generator_
-from .option import Option
-from .knuthgenerator import KnuthGenerator
-from .productgenerator import ProductGenerator
-from .sequencegenerator import SequenceGenerator
 
 
-class Combinatorial(Generator_):
+class Combinatorial(Configuration):
 
     """Combinatorial generator that provides n-level solution sets."""
 
-    def get_features(self) -> Generator[tuple[Feature], None, None]:
-        """Return an iterator through the Combinatorial."""
-        class_, option = self.get_generator()
-        generator = class_(self._dimensions, self._constraints,
-                           self._coverage, self._seed)
-        generator.option = option
-        yield from generator.get_features()
+    def __init__(self, dimensions: Collection[Dimension] = (),
+                 constraints: Collection[Constraint] = (),
+                 coverage: int = 0, seed: Optional[int] = None):
+        """Construct a Combinatorial object.
 
-    def get_generator(self) -> tuple[Optional[type], Option]:
-        """Get the best generator for the configuration."""
-        for case_ in (self.case_1, self.case_2, self.case_3):
-            class_, option = case_()
-            if class_:
-                return class_, option
-        return self.case_default()
-
-    def case_default(self) -> tuple[Optional[type], Option]:
-        """Return a reasonable default generator."""
-        return SequenceGenerator, (Option.COVERAGE_ROTATE_LEFT |
-                                   Option.FEATURE_RANDOM)
-
-    def case_1(self) -> tuple[Optional[type], Option]:
-        """Return the product generator for configurations where complete
-        coverage is required.
+        :param dimensions: Dimensions in the configuration.
+        :param constraints: Constraints in the configuration.
+        :param coverage: Required coverage.
+        :param seed: Randomising seed.
         """
-        # Any generation where the effective dimensions number the same
-        # as the effective coverage can be handled by the product
-        # generator.
-        if self.effective_coverage == len(self.effective_dimensions):
-            return ProductGenerator, Option.FEATURE_RANDOM
-        else:
-            return None, Option.NONE
+        assert isinstance(dimensions, Collection), check()
+        assert isinstance(constraints, Collection), check()
+        assert isinstance(coverage, int), check()
+        assert isinstance(seed, (int, NONE_TYPE)), check()
+        # ----------
+        self._dimensions = dimensions
+        self._coverage = coverage
+        self._generator = self.get_generator(dimensions, constraints,
+                                             coverage, seed)
+        super().__init__()
 
-    def case_2(self) -> tuple[Optional[type], Option]:
-        """Return the sequence generator configured for the special case where
-        there are 4 dimensions of 2 features.
-        """
-        # Special case 2 is where there are 4 dimensions each with 2 features.
-        # This case never returns minimum of 4. No solution less than 5 has
-        # been found.
-        if len(self._dimensions) == 4:
-            if len(self._dimensions[0].features) == 2:
-                if self.density == 1.0:
-                    option = (Option.COVERAGE_SORT_COVERED_MINIMUM |
-                              Option.FEATURE_RANDOM)
-                    return SequenceGenerator, option
-        return None, Option.NONE
+    @property
+    def generator(self) -> Generator_:
+        """Underlying generator servicing the combinatorial."""
+        return self._generator
 
-    def case_3(self) -> tuple[Optional[type], Option]:
-        """Return the Knuth generator configured for very small balanced
-        cases.
-        """
-        # Special case 3 is where the analysis can be reasonably handled by
-        # the Knuth generator. With the exception of case 1, these always
-        # meet the minimum.
-        if not self.constraints:
-            if len(self._dimensions) <= 4:
-                if len(self._dimensions[0].features) <= 3:
-                    if self.density == 1.0:
-                        return KnuthGenerator, Option.FEATURE_RANDOM
-        return None, Option.NONE
+    @property
+    def dimensions(self) -> Collection[Dimension]:
+        """Dimensions in the configuration."""
+        return self._dimensions
+
+    @property
+    def constraints(self) -> Collection[Constraint]:
+        """Constraints in the configuration."""
+        return self._generator.constraints
+
+    @property
+    def coverage(self) -> int:
+        """Required coverage."""
+        return self._coverage
+
+    @property
+    def seed(self) -> Optional[int]:
+        """Randomising seed for configuration."""
+        return self._generator.seed
+
+    def __iter__(self) -> Generator[tuple[Any], None, None]:
+        # iterate through the generator and yield the value sets.
+        if next((False for d in self._dimensions if len(d) == 0), True):
+            # Return an iterator through the Generator.
+            for _ in self._generator.iterate(*self.get_option()):
+                yield tuple(d.get_value() for d in self._dimensions)

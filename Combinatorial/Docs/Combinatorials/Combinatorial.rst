@@ -29,18 +29,20 @@ Automated test plan management.
 Design
 ------
 
-The combinatorial draws together a range of different heuristics to provide
-a full-featured combinatorial tool that is straightforward to configure and
-gives good solutions. 
+The combinatorial draws together a range of different algorithms and
+heuristics to provide a full-featured combinatorial tool that is
+straightforward to configure and gives good solutions. 
 
 Requirement
 -----------
 
 For any generation, the following must hold true:
+
 - All unconstrained sub-combinations must be generated
 - There must be no duplicates
 
 There are some desired properties:
+
 - The generation should produce the minimum combinations possible
 - The generation should finish in a reasonable time
 - Lower order coverages should be complete as early as possible

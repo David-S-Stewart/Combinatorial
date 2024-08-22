@@ -1,19 +1,21 @@
 """
 :Author:        David Stewart
-:Contact:       https://www.linkedin.com/in/david-stewart-ab643452/
+:Contact:       https://www.linkedin.com/in/david-s-stewart/
 :Date:          2024-03-01
 :Compatibility: Python 3.9
 :License:       MIT
+
+Feature set in the context of a constraint.
 """
 
 from collections.abc import Collection
 from typing import Any, Optional
 from utility import check
 from .dimension import Dimension
-from .feature import Feature
+from .featureset import FeatureSet
 
 
-class Extent:
+class Extent(FeatureSet):
 
     """Extent of a Constraint."""
 
@@ -23,27 +25,16 @@ class Extent:
         :param identity: The identity of the Extent.
         :param values: The values in the Extent.
         """
-        assert isinstance(identity, str), check()
-        assert isinstance(values, Collection), check()
-        # ----------
-        self._identity = identity
-        self._values = values
         self._dimension = None
-        self._features = []
+        super().__init__(identity, values)
 
     def evaluate(self) -> bool:
         """True if the Extent evaluates True, False otherwise."""
-        return self._dimension.feature in self._features
-
-    @property
-    def identity(self) -> str:
-        """The identity of the Extent."""
-        return self._identity
-
-    @property
-    def values(self) -> Collection[Any]:
-        """The values in the Extent."""
-        return self._values
+        if self._dimension:
+            return self._dimension.feature in self._features
+        else:
+            # If no dimension is set, the extent must evaluate as False.
+            return False
 
     @property
     def dimension(self) -> Optional[Dimension]:
@@ -64,20 +55,9 @@ class Extent:
                 if feature:
                     self._features.append(feature)
 
-    @property
-    def features(self) -> list[Feature]:
-        """The constraining features from the referenced dimension."""
-        return self._features
-
-    def __str__(self) -> str:
-        # Example: 'Extent'
-        return self.__class__.__name__
-
     def __eq__(self, other: Any) -> bool:
         # Check equality against another Dimension.
-        if type(self) is type(other):
-            if self._identity == other.identity:
-                if self._value == other.value:
-                    if self._dimension == other.dimension:
-                        return True
+        if super().__eq__(other):
+            if self._dimension == other.dimension:
+                return True
         return False

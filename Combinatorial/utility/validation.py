@@ -1,10 +1,11 @@
 """
 :Author:        David Stewart
-:Contact:       https://www.linkedin.com/in/david-stewart-ab643452/
+:Contact:       https://www.linkedin.com/in/david-s-stewart/
 :Date:          2024-03-01
 :Compatibility: Python 3.9
 :License:       MIT
 
+Validation support utilities.
 """
 
 from inspect import stack
@@ -15,7 +16,7 @@ def check() -> str:
     """Return formatted text for precondition checks.
 
     This function provides concise and consistent responses for all
-    precondition asserts.
+    precondition asserts by extracting information from the stack.
     """
     stack_ = stack()[1]
     locals_ = stack_.frame.f_locals

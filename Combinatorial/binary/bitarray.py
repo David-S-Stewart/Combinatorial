@@ -1,9 +1,11 @@
 """
 :Author:        David Stewart
-:Contact:       https://www.linkedin.com/in/david-stewart-ab643452/
+:Contact:       https://www.linkedin.com/in/david-s-stewart/
 :Date:          2024-03-01
 :Compatibility: Python 3.9
 :License:       MIT
+
+Provide a memory efficient collection class for an array of bits.
 """
 
 from collections.abc import Collection, Generator
@@ -22,7 +24,6 @@ class BitArray(Collection):
 
     :var TYPE: Valid types for creation and extension.
     :var MARKER: Binary indicator for string representations.
-
     """
 
     TYPE = TypeVar('BITS', Collection, bytes, bytearray, str, int)
@@ -55,6 +56,10 @@ class BitArray(Collection):
         """Remove all values from the BitArray."""
         self._length = 0
         self._data.clear()
+
+    def zero(self):
+        """Zero all values without changing array size."""
+        self._data = bytearray(len(self._data))
 
     def copy(self) -> 'BitArray':
         """Return a shallow copy of the BitArray."""
@@ -165,6 +170,15 @@ class BitArray(Collection):
                 else:
                     count -= 1
         raise ValueError(f'Insufficient {value} values in list.')
+
+    def indexes_of(self, value: bool) -> Generator[int]:
+        """ Return a generator of indexes where the values occurs.
+
+        :param value: Value to find.
+        """
+        for index, value_ in enumerate(self):
+            if value == value_:
+                yield index
 
     def random_index(self, value: bool, random: Random) -> int:
         """Return the index of any random value within the BitArray.

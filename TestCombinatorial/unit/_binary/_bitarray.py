@@ -1,6 +1,6 @@
 """
 :Author:        David Stewart
-:Contact:       https://www.linkedin.com/in/david-stewart-ab643452/
+:Contact:       https://www.linkedin.com/in/david-s-stewart/
 :Date:          2024-01-01
 :Compatibility: Python 3.9
 :License:       MIT
@@ -202,7 +202,7 @@ class _BitArray(TestCase):
             self.assertEqual(len(bit_array), index + 4)
             bit_array.append(True)
 
-    # Test clear.
+    # Test clear and zero.
 
     def test_clear(self):
         """Test clear on a BitArray."""
@@ -211,6 +211,14 @@ class _BitArray(TestCase):
         self.assertEqual(str(bit_array), '0b')
         self.assertEqual(bit_array.length, 0)
         self.assertEqual(len(bit_array), 0)
+
+    def test_zero(self):
+        """Test zero on a BitArray."""
+        bit_array = BitArray('1101')
+        bit_array.zero()
+        self.assertEqual(str(bit_array), '0b0000')
+        self.assertEqual(bit_array.length, 4)
+        self.assertEqual(len(bit_array), 4)
 
     # Test copy.
 

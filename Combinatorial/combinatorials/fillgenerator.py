@@ -10,16 +10,19 @@ greater than the coverage.
 """
 
 from collections.abc import Collection, Generator
+from itertools import product
+from random import Random
 from typing import Optional
 from utility import check
 from .constraint import Constraint
 from .dimension import Dimension
 from .feature import Feature
 from .generator import Generator_
+from .minusonegenerator import MinusOneGenerator
 from .option import Option
 
 
-class SequenceGenerator(Generator_):
+class FillGenerator(Generator_):
 
     """General purpose generator that can resolve all generations except those
     covered by the Generator_.
@@ -52,10 +55,50 @@ class SequenceGenerator(Generator_):
         assert isinstance(option, Option), check()
         assert isinstance(iterator_seed, int), check()
         # ----------
-        dimensions = list(self._dimensions)
+        dimensions = [d for d in self._dimensions if len(d) > 1]
         dimensions.sort(key=lambda d: len(d), reverse=True)
+        minus = MinusOneGenerator(dimensions[:self._coverage + 1],
+                                  (), self._coverage)
+        variable = dimensions[self._coverage:]
         self.initialise((), option)
         # Iterate through the combinations.
         sub_combinations = self.get_sub_combinations()
+        # Select feature order.
+        random = Random(iterator_seed)
+        order = random if option & Option.FEATURE_RANDOM else None
+        for features in minus.iterate(option, iterator_seed):
+            # Select feature order.
+            best = []
+            count = len(sub_combinations)
+            feature_sets = [d.get_features(order) for d in variable]
+            if features[-1] is not None:
+                feature_sets[0] = [features[-1]]
+            for solution in product(*feature_sets):
+                for feature, dimension in zip(solution, variable):
+                    dimension.feature = feature
+                if not self.is_constrained():
+                    covered = sum(1 for s in sub_combinations if s.is_covered)
+                    if covered == 0:
+                        count = 0
+                        best = solution
+                        break
+                    elif covered < count:
+                        count = covered
+                        best = solution
+            if best:
+                if count > 0:
+                    # Reload best.
+                    for feature, dimension in zip(best, variable):
+                        dimension.feature = feature
+                # Cover the solution and yield.
+                for sub_combination in sub_combinations:
+                    sub_combination.cover()
+                for dimension in dimensions:
+                    dimension.feature.count += 1
+                yield [d.feature for d in self._dimensions]
+                # Remove complete sub_combinations.
+                sub_combinations = [s for s in sub_combinations if False in s]
+
+        # Use the complete method to fill the remaining sub_combinations.
         yield from self._fill_to_completion(dimensions, sub_combinations,
                                             option, iterator_seed)
