@@ -72,5 +72,6 @@ class Combinatorial(Configuration):
         # iterate through the generator and yield the value sets.
         if next((False for d in self._dimensions if len(d) == 0), True):
             # Return an iterator through the Generator.
-            for _ in self._generator.iterate(*self.get_option()):
+            option, iterator_seed = self.get_option(self._generator)
+            for _ in self._generator.iterate(option, iterator_seed):
                 yield tuple(d.get_value() for d in self._dimensions)
