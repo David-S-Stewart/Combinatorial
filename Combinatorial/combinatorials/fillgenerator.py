@@ -58,7 +58,7 @@ class FillGenerator(Generator_):
         dimensions = [d for d in self._dimensions if len(d) > 1]
         dimensions.sort(key=lambda d: len(d), reverse=True)
         minus = MinusOneGenerator(dimensions[:self._coverage + 1],
-                                  (), self._coverage)
+                                  (), self._coverage, self._seed)
         variable = dimensions[self._coverage:]
         self.initialise((), option)
         # Iterate through the combinations.
